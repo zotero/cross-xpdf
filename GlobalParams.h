@@ -214,7 +214,7 @@ struct XpdfWin32ErrorInfo {
 
 class GlobalParams {
 public:
-
+	void scanEncodingDirs(const char *dataRoot);
   // Initialize the global parameters by attempting to read a config
   // file.
   GlobalParams(const char *cfgFileName);
@@ -375,7 +375,14 @@ public:
 
 private:
 
-  void createDefaultKeyBindings();
+
+    void addCIDToUnicode(GString *collection, GString *fileName);
+    void addUnicodeMap(GString *encodingName, GString *fileName);
+    void addCMapDir(GString *collection, GString *dir);
+    void parseNameToUnicode1(GString *name);
+
+
+    void createDefaultKeyBindings();
   void parseFile(GString *fileName, FILE *f);
   void parseNameToUnicode(GList *tokens, GString *fileName, int line);
   void parseCIDToUnicode(GList *tokens, GString *fileName, int line);

@@ -1118,6 +1118,81 @@ void GlobalParams::parseLine(char *buf, GString *fileName, int line) {
   deleteGList(tokens, GString);
 }
 
+void GlobalParams::scanEncodingDirs(const char *dataRoot) {
+    GDir *dir;
+    GDirEntry *entry;
+
+    // allocate buffer large enough to append "/nameToUnicode"
+    size_t bufSize = strlen(dataRoot) + strlen("/nameToUnicode") + 1;
+    char *dataPathBuffer = new char[bufSize];
+
+    snprintf(dataPathBuffer, bufSize, "%s/nameToUnicode", dataRoot);
+    dir = new GDir(dataPathBuffer, gTrue);
+    while (entry = dir->getNextEntry(), entry != NULL) {
+        if (!entry->isDir()) {
+            parseNameToUnicode1(entry->getFullPath());
+        }
+        delete entry;
+    }
+    delete dir;
+
+    snprintf(dataPathBuffer, bufSize, "%s/cidToUnicode", dataRoot);
+    dir = new GDir(dataPathBuffer, gFalse);
+    while (entry = dir->getNextEntry(), entry != NULL) {
+        addCIDToUnicode(entry->getName(), entry->getFullPath());
+        delete entry;
+    }
+    delete dir;
+
+    snprintf(dataPathBuffer, bufSize, "%s/unicodeMap", dataRoot);
+    dir = new GDir(dataPathBuffer, gFalse);
+    while (entry = dir->getNextEntry(), entry != NULL) {
+        addUnicodeMap(entry->getName(), entry->getFullPath());
+        delete entry;
+    }
+    delete dir;
+
+    snprintf(dataPathBuffer, bufSize, "%s/cMap", dataRoot);
+    dir = new GDir(dataPathBuffer, gFalse);
+    while (entry = dir->getNextEntry(), entry != NULL) {
+        addCMapDir(entry->getName(), entry->getFullPath());
+        toUnicodeDirs->append(entry->getFullPath()->copy());
+        delete entry;
+    }
+    delete dir;
+
+    delete[] dataPathBuffer;
+}
+
+void GlobalParams::parseNameToUnicode1(GString *name) {
+  char *tok1, *tok2;
+  FILE *f;
+  char buf[256];
+  int line;
+  Unicode u;
+  char *tokptr;
+
+  if (!(f = openFile(name->getCString(), "r"))) {
+    error(errIO, -1, "Couldn't open 'nameToUnicode' file '{0:t}'",
+          name);
+    return;
+  }
+  line = 1;
+  while (getLine(buf, sizeof(buf), f)) {
+    tok1 = strtok_r(buf, " \t\r\n", &tokptr);
+    tok2 = strtok_r(NULL, " \t\r\n", &tokptr);
+    if (tok1 && tok2) {
+      sscanf(tok1, "%x", &u);
+      nameToUnicode->add(tok2, u);
+    } else {
+      error(errConfig, -1, "Bad line in 'nameToUnicode' file ({0:t}:{1:d})",
+            name, line);
+    }
+    ++line;
+  }
+  fclose(f);
+}
+
 void GlobalParams::parseNameToUnicode(GList *tokens, GString *fileName,
 				      int line) {
   GString *name;
@@ -1152,6 +1227,36 @@ void GlobalParams::parseNameToUnicode(GList *tokens, GString *fileName,
     ++line2;
   }
   fclose(f);
+}
+
+void GlobalParams::addCIDToUnicode(GString *collection,
+                                   GString *fileName) {
+    GString *old;
+
+    if ((old = (GString *)cidToUnicodes->remove(collection))) {
+        delete old;
+    }
+    cidToUnicodes->add(collection->copy(), fileName->copy());
+}
+
+void GlobalParams::addUnicodeMap(GString *encodingName, GString *fileName)
+{
+    GString *old;
+
+    if ((old = (GString *)unicodeMaps->remove(encodingName))) {
+        delete old;
+    }
+    unicodeMaps->add(encodingName->copy(), fileName->copy());
+}
+
+void GlobalParams::addCMapDir(GString *collection, GString *dir) {
+    GList *list;
+
+    if (!(list = (GList *)cMapDirs->lookup(collection))) {
+        list = new GList();
+        cMapDirs->add(collection->copy(), list);
+    }
+    list->append(dir->copy());
 }
 
 void GlobalParams::parseCIDToUnicode(GList *tokens, GString *fileName,

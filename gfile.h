@@ -26,6 +26,8 @@
 #else
 #  include <unistd.h>
 #  include <sys/types.h>
+#include <dirent.h>
+
 #endif
 #include "gtypes.h"
 
@@ -111,5 +113,84 @@ extern int gfseek(FILE *f, GFileOffset offset, int whence);
 
 // Like ftell, but returns a 64-bit file offset if available.
 extern GFileOffset gftell(FILE *f);
+
+
+//------------------------------------------------------------------------
+// GooFile
+//------------------------------------------------------------------------
+
+class GooFile
+{
+public:
+	//int read(char *buf, int n, Goffset offset) const;
+	//Goffset size() const;
+
+	static GooFile *open(GString *fileName);
+
+#ifdef _WIN32
+	static GooFile *open(const wchar_t *fileName);
+
+  ~GooFile() { CloseHandle(handle); }
+
+private:
+  GooFile(HANDLE handleA): handle(handleA) {}
+  HANDLE handle;
+#else
+	~GooFile() { close(fd); }
+
+private:
+	GooFile(int fdA) : fd(fdA) {}
+	int fd;
+#endif // _WIN32
+};
+
+//------------------------------------------------------------------------
+// GDir and GDirEntry
+//------------------------------------------------------------------------
+
+class GDirEntry {
+public:
+
+	GDirEntry(char *dirPath, char *nameA, GBool doStat);
+	~GDirEntry();
+	GString *getName() { return name; }
+	GString *getFullPath() { return fullPath; }
+	GBool isDir() { return dir; }
+
+private:
+	GDirEntry(const GDirEntry &other);
+	GDirEntry& operator=(const GDirEntry &other);
+
+	GString *name;		// dir/file name
+	GString *fullPath;
+	GBool dir;			// is it a directory?
+};
+
+class GDir {
+public:
+
+	GDir(char *name, GBool doStatA = gTrue);
+	~GDir();
+	GDirEntry *getNextEntry();
+	void rewind();
+
+private:
+	GDir(const GDir &other);
+	GDir& operator=(const GDir &other);
+
+	GString *path;		// directory path
+	GBool doStat;			// call stat() for each entry?
+#if defined(_WIN32)
+	WIN32_FIND_DATAA ffd;
+  HANDLE hnd;
+#elif defined(ACORN)
+#elif defined(MACOS)
+#else
+	DIR *dir;			// the DIR structure from opendir()
+#ifdef VMS
+	GBool needParent;		// need to return an entry for [-]
+#endif
+#endif
+};
 
 #endif
