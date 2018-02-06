@@ -8,6 +8,30 @@
 //
 //========================================================================
 
+//========================================================================
+//
+// Modified under the Poppler project - http://poppler.freedesktop.org
+//
+// All changes made under the Poppler project to this file are licensed
+// under GPL version 2 or later
+//
+// Copyright (C) 2006 Takashi Iwai <tiwai@suse.de>
+// Copyright (C) 2006 Kristian Høgsberg <krh@redhat.com>
+// Copyright (C) 2008 Adam Batkin <adam@batkin.net>
+// Copyright (C) 2008, 2010, 2012, 2013 Hib Eris <hib@hiberis.nl>
+// Copyright (C) 2009, 2012, 2014 Albert Astals Cid <aacid@kde.org>
+// Copyright (C) 2009 Kovid Goyal <kovid@kovidgoyal.net>
+// Copyright (C) 2013 Adam Reichold <adamreichold@myopera.com>
+// Copyright (C) 2013, 2017 Adrian Johnson <ajohnson@redneon.com>
+// Copyright (C) 2013 Peter Breitenlohner <peb@mppmu.mpg.de>
+// Copyright (C) 2013 Thomas Freitag <Thomas.Freitag@alfa.de>
+// Copyright (C) 2017 Christoph Cullmann <cullmann@kde.org>
+//
+// To see a description of the changes please see the Changelog file that
+// came with your tarball or type make ChangeLog if you are building from git
+//
+//========================================================================
+
 #include <aconf.h>
 
 #ifdef _WIN32
@@ -687,7 +711,6 @@ GFileOffset gftell(FILE *f) {
 #endif
 }
 
-
 //------------------------------------------------------------------------
 // GooFile
 //------------------------------------------------------------------------
@@ -717,7 +740,6 @@ GooFile* GooFile::open(const wchar_t *fileName) {
 }
 
 #else
-
 
 GooFile* GooFile::open(GString *fileName) {
 #ifdef VMS
