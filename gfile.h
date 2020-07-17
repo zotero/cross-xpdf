@@ -32,6 +32,7 @@
 #ifndef GFILE_H
 #define GFILE_H
 
+#include <aconf.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -134,6 +135,10 @@ extern int gfseek(FILE *f, GFileOffset offset, int whence);
 
 // Like ftell, but returns a 64-bit file offset if available.
 extern GFileOffset gftell(FILE *f);
+
+// On Windows, this gets the Unicode command line and converts it to
+// UTF-8.  On other systems, this is a nop.
+extern void fixCommandLine(int *argc, char **argv[]);
 
 
 //------------------------------------------------------------------------

@@ -33,6 +33,7 @@ RUN git clone https://github.com/tpoechtrager/osxcross /build/osxcross
 COPY MacOSX10.11.sdk.tar.xz /build/osxcross/tarballs/MacOSX10.11.sdk.tar.xz
 
 RUN cd /build/osxcross \
+  && git checkout c47ff0aeed1a7d0e1f884812fc170e415f05be5a \
 	&& echo | SDK_VERSION=10.11 OSX_VERSION_MIN=10.4 UNATTENDED=1 ./build.sh \
 	&& mv /build/osxcross/target /usr/x86_64-apple-darwin15
 
@@ -41,9 +42,9 @@ COPY windows_x86.cmake /build/windows_x86.cmake
 COPY windows_x64.cmake /build/windows_x64.cmake
 
 RUN cd /build/ \
-	&& wget -O xpdf-4.00.tar.gz https://xpdfreader-dl.s3.amazonaws.com/xpdf-4.00.tar.gz \
+	&& wget -O xpdf.tar.gz https://xpdfreader-dl.s3.amazonaws.com/xpdf-4.02.tar.gz \
 	&& mkdir xpdf \
-	&& tar -xf xpdf-4.00.tar.gz -C xpdf --strip-components=1 \
+	&& tar -xf xpdf.tar.gz -C xpdf --strip-components=1 \
 	&& cd xpdf \
 	&& sed -i "/^int\smain(/a if(argc!=3 || argv[1][0]=='-' || argv[2][0]=='-') {fprintf(stderr,\"This is a custom xpdf pdfinfo build. Please use the original version!\\\\n%s\\\\n%s\\\\npdfinfo <PDF-file> <output-file>\\\\n\",xpdfVersion,xpdfCopyright); return 1;} else {freopen( argv[argc-1], \"w\", stdout); argc--;}" xpdf/pdfinfo.cc
 
@@ -52,6 +53,7 @@ COPY GlobalParams.h /build/xpdf/xpdf/GlobalParams.h
 COPY GlobalParams.cc /build/xpdf/xpdf/GlobalParams.cc
 COPY gfile.h /build/xpdf/goo/gfile.h
 COPY gfile.cc /build/xpdf/goo/gfile.cc
+COPY cmake-config.txt /build/xpdf/cmake-config.txt
 
 # macOS 64-bit
 RUN cd /build/darwin_x64 \
@@ -110,7 +112,7 @@ RUN mkdir /build/pdftools \
 	&& cp /build/linux_x64/xpdf/pdftotext ./pdftotext-linux-x86_64
 
 RUN cd /build/ \
-	&& wget -O poppler-data.tar.gz https://poppler.freedesktop.org/poppler-data-0.4.8.tar.gz \
+	&& wget -O poppler-data.tar.gz https://poppler.freedesktop.org/poppler-data-0.4.9.tar.gz \
 	&& mkdir poppler-data \
 	&& tar -xf poppler-data.tar.gz -C poppler-data --strip-components=1 \
 	&& cd pdftools \

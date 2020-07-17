@@ -60,6 +60,7 @@ class CharCodeToUnicode;
 class CharCodeToUnicodeCache;
 class UnicodeMap;
 class UnicodeMapCache;
+class UnicodeRemapping;
 class CMap;
 class CMapCache;
 struct XpdfSecurityHandler;
@@ -77,7 +78,8 @@ enum SysFontType {
   sysFontPFA,
   sysFontPFB,
   sysFontTTF,
-  sysFontTTC
+  sysFontTTC,
+  sysFontOTF
 };
 
 //------------------------------------------------------------------------
@@ -240,6 +242,7 @@ struct XpdfWin32ErrorInfo {
 
 class GlobalParams {
 public:
+
   // Initialize the global parameters by attempting to read a config
   // file.
   GlobalParams(const char *cfgFileName);
@@ -262,13 +265,13 @@ public:
   FILE *getUnicodeMapFile(GString *encodingName);
   FILE *findCMapFile(GString *collection, GString *cMapName);
   FILE *findToUnicodeFile(GString *name);
+  UnicodeRemapping *getUnicodeRemapping();
   GString *findFontFile(GString *fontName);
   GString *findBase14FontFile(GString *fontName, int *fontNum,
 			      double *oblique);
   GString *findSystemFontFile(GString *fontName, SysFontType *type,
 			      int *fontNum);
   GString *findCCFontFile(GString *collection);
-  GString *getPSFile();
   int getPSPaperWidth();
   int getPSPaperHeight();
   void getPSImageableArea(int *llx, int *lly, int *urx, int *ury);
@@ -305,7 +308,10 @@ public:
   GBool getTextKeepTinyChars();
   GString *getInitialZoom();
   int getDefaultFitZoom();
+  GString *getInitialDisplayMode();
+  GBool getInitialToolbarState();
   GBool getInitialSidebarState();
+  GString *getInitialSelectMode();
   int getMaxTileWidth();
   int getMaxTileHeight();
   int getTileCacheSize();
@@ -330,17 +336,23 @@ public:
   GString *getPaperColor();
   GString *getMatteColor();
   GString *getFullScreenMatteColor();
+  GBool getReverseVideoInvertImages();
   GString *getLaunchCommand() { return launchCommand; }
   GString *getMovieCommand() { return movieCommand; }
+  GString *getDefaultPrinter();
   GBool getMapNumericCharNames();
   GBool getMapUnknownCharNames();
   GBool getMapExtTrueTypeFontsViaUnicode();
+  GBool isDroppedFont(const char *fontName);
   GBool getEnableXFA();
   GList *getKeyBinding(int code, int mods, int context);
   int getNumPopupMenuCmds();
   PopupMenuCmd *getPopupMenuCmd(int idx);
+  GString *getTabStateFile();
   GBool getPrintCommands();
   GBool getErrQuiet();
+  GString *getDebugLogFile();
+  void debugLogPrintf(char *fmt, ...);
 
   CharCodeToUnicode *getCIDToUnicode(GString *collection);
   CharCodeToUnicode *getUnicodeToUnicode(GString *fontName);
@@ -350,8 +362,8 @@ public:
 
   //----- functions to set parameters
 
+  void addUnicodeRemapping(Unicode in, Unicode *out, int len);
   void addFontFile(GString *fontName, GString *path);
-  void setPSFile(char *file);
   GBool setPSPaperSize(char *size);
   void setPSPaperWidth(int width);
   void setPSPaperHeight(int height);
@@ -391,6 +403,7 @@ public:
   void setMapUnknownCharNames(GBool map);
   void setMapExtTrueTypeFontsViaUnicode(GBool map);
   void setEnableXFA(GBool enable);
+  void setTabStateFile(char *tabStateFileA);
   void setPrintCommands(GBool printCommandsA);
   void setErrQuiet(GBool errQuietA);
 
@@ -398,6 +411,8 @@ public:
   void setWin32ErrorInfo(const char *func, DWORD code);
   XpdfWin32ErrorInfo *getWin32ErrorInfo();
 #endif
+
+  static const char *defaultTextEncoding;
 
 private:
 
@@ -414,22 +429,21 @@ private:
   void parseUnicodeMap(GList *tokens, GString *fileName, int line);
   void parseCMapDir(GList *tokens, GString *fileName, int line);
   void parseToUnicodeDir(GList *tokens, GString *fileName, int line);
+  void parseUnicodeRemapping(GList *tokens, GString *fileName, int line);
   void parseFontFile(GList *tokens, GString *fileName, int line);
   void parseFontDir(GList *tokens, GString *fileName, int line);
   void parseFontFileCC(GList *tokens, GString *fileName,
 		       int line);
-  void parsePSFile(GList *tokens, GString *fileName, int line);
   void parsePSPaperSize(GList *tokens, GString *fileName, int line);
   void parsePSImageableArea(GList *tokens, GString *fileName, int line);
   void parsePSLevel(GList *tokens, GString *fileName, int line);
   void parsePSResidentFont(GList *tokens, GString *fileName, int line);
   void parsePSResidentFont16(GList *tokens, GString *fileName, int line);
   void parsePSResidentFontCC(GList *tokens, GString *fileName, int line);
-  void parseTextEncoding(GList *tokens, GString *fileName, int line);
   void parseTextEOL(GList *tokens, GString *fileName, int line);
-  void parseInitialZoom(GList *tokens, GString *fileName, int line);
   void parseStrokeAdjust(GList *tokens, GString *fileName, int line);
   void parseScreenType(GList *tokens, GString *fileName, int line);
+  void parseDropFont(GList *tokens, GString *fileName, int line);
   void parseBind(GList *tokens, GString *fileName, int line);
   void parseUnbind(GList *tokens, GString *fileName, int line);
   GBool parseKey(GString *modKeyStr, GString *contextStr,
@@ -437,13 +451,11 @@ private:
 		 const char *cmdName,
 		 GList *tokens, GString *fileName, int line);
   void parsePopupMenuCmd(GList *tokens, GString *fileName, int line);
-  void parseCommand(const char *cmdName, GString **val,
-		    GList *tokens, GString *fileName, int line);
   void parseYesNo(const char *cmdName, GBool *flag,
 		  GList *tokens, GString *fileName, int line);
   GBool parseYesNo2(char *token, GBool *flag);
-  void parseColor(const char *cmdName, GString **val,
-		  GList *tokens, GString *fileName, int line);
+  void parseString(const char *cmdName, GString **s,
+		   GList *tokens, GString *fileName, int line);
   void parseInteger(const char *cmdName, int *val,
 		    GList *tokens, GString *fileName, int line);
   void parseFloat(const char *cmdName, double *val,
@@ -472,6 +484,8 @@ private:
   GHash *cMapDirs;		// list of CMap dirs, indexed by collection
 				//   name [GList[GString]]
   GList *toUnicodeDirs;		// list of ToUnicode CMap dirs [GString]
+  UnicodeRemapping *		// Unicode remapping for text output
+    unicodeRemapping;
   GHash *fontFiles;		// font files: font name mapped to path
 				//   [GString]
   GList *fontDirs;		// list of font dirs [GString]
@@ -480,7 +494,6 @@ private:
   GHash *base14SysFonts;	// Base-14 system font files: font name
 				//   mapped to path [Base14FontInfo]
   SysFontList *sysFonts;	// system fonts
-  GString *psFile;		// PostScript file or command (for xpdf)
   int psPaperWidth;		// paper size, in PostScript points, for
   int psPaperHeight;		//   PostScript output
   int psImageableLLX,		// imageable area, in PostScript points,
@@ -532,8 +545,13 @@ private:
   GString *initialZoom;		// initial zoom level
   int defaultFitZoom;		// default zoom factor if initialZoom is
 				//   'page' or 'width'.
+  GString *initialDisplayMode;	// initial display mode (single,
+				//   continuous, etc.)
+  GBool initialToolbarState;	// initial toolbar state - open (true)
+				//   or closed (false)
   GBool initialSidebarState;	// initial sidebar state - open (true)
 				//   or closed (false)
+  GString *initialSelectMode;	// initial selection mode (block or linear)
   int maxTileWidth;		// maximum rasterization tile width
   int maxTileHeight;		// maximum rasterization tile height
   int tileCacheSize;		// number of rasterization tiles in cache
@@ -559,17 +577,23 @@ private:
   GString *paperColor;		// paper (page background) color
   GString *matteColor;		// matte (background outside of page) color
   GString *fullScreenMatteColor; // matte color in full-screen mode
+  GBool reverseVideoInvertImages; // invert images in reverse video mode
   GString *launchCommand;	// command executed for 'launch' links
   GString *movieCommand;	// command executed for movie annotations
+  GString *defaultPrinter;	// default printer (for interactive printing
+				//   from the viewer)
   GBool mapNumericCharNames;	// map numeric char names (from font subsets)?
   GBool mapUnknownCharNames;	// map unknown char names?
   GBool mapExtTrueTypeFontsViaUnicode;  // map char codes to GID via Unicode
 				        //   for external TrueType fonts?
+  GHash *droppedFonts;		// dropped fonts [int]
   GBool enableXFA;		// enable XFA form rendering
   GList *keyBindings;		// key & mouse button bindings [KeyBinding]
   GList *popupMenuCmds;		// popup menu commands [PopupMenuCmd]
+  GString *tabStateFile;	// path for the tab state save file
   GBool printCommands;		// print the drawing commands
   GBool errQuiet;		// suppress error messages?
+  GString *debugLogFile;	// path for debug log file
 
   CharCodeToUnicodeCache *cidToUnicodeCache;
   CharCodeToUnicodeCache *unicodeToUnicodeCache;
