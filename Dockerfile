@@ -46,7 +46,7 @@ RUN cd /build/ \
 	&& mkdir xpdf \
 	&& tar -xf xpdf.tar.gz -C xpdf --strip-components=1 \
 	&& cd xpdf \
-	&& sed -i "/^int\smain(/a if(argc!=3 || argv[1][0]=='-' || argv[2][0]=='-') {fprintf(stderr,\"This is a custom xpdf pdfinfo build. Please use the original version!\\\\n%s\\\\n%s\\\\npdfinfo <PDF-file> <output-file>\\\\n\",xpdfVersion,xpdfCopyright); return 1;} else {freopen( argv[argc-1], \"w\", stdout); argc--;}" xpdf/pdfinfo.cc
+	&& sed -i "/^\s\sfixCommandLine(&argc,/a if(argc!=3 || argv[1][0]=='-' || argv[2][0]=='-') {fprintf(stderr,\"This is a custom xpdf pdfinfo build. Please use the original version!\\\\n%s\\\\n%s\\\\npdfinfo <PDF-file> <output-file>\\\\n\",xpdfVersion,xpdfCopyright); return 1;} else {freopen( argv[argc-1], \"w\", stdout); argc--;}" xpdf/pdfinfo.cc
 
 COPY pdftotext.cc /build/xpdf/xpdf/pdftotext.cc
 COPY GlobalParams.h /build/xpdf/xpdf/GlobalParams.h
