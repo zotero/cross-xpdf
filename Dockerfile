@@ -42,7 +42,7 @@ COPY windows_x86.cmake /build/windows_x86.cmake
 COPY windows_x64.cmake /build/windows_x64.cmake
 
 RUN cd /build/ \
-	&& wget -O xpdf.tar.gz https://xpdfreader-dl.s3.amazonaws.com/xpdf-4.02.tar.gz \
+	&& wget -O xpdf.tar.gz https://dl.xpdfreader.com/xpdf-4.03.tar.gz \
 	&& mkdir xpdf \
 	&& tar -xf xpdf.tar.gz -C xpdf --strip-components=1 \
 	&& cd xpdf \
@@ -112,7 +112,7 @@ RUN mkdir /build/pdftools \
 	&& cp /build/linux_x64/xpdf/pdftotext ./pdftotext-linux-x86_64
 
 RUN cd /build/ \
-	&& wget -O poppler-data.tar.gz https://poppler.freedesktop.org/poppler-data-0.4.9.tar.gz \
+	&& wget -O poppler-data.tar.gz https://poppler.freedesktop.org/poppler-data-0.4.10.tar.gz \
 	&& mkdir poppler-data \
 	&& tar -xf poppler-data.tar.gz -C poppler-data --strip-components=1 \
 	&& cd pdftools \
