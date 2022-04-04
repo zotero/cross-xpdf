@@ -124,6 +124,4 @@ RUN cd /build/ \
 	&& cp -r ../../poppler-data/unicodeMap ./ \
 	&& cp -r ../../poppler-data/COPYING ./ \
 	&& cp -r ../../poppler-data/COPYING.adobe ./ \
-	&& cp -r ../../poppler-data/COPYING.gpl2 ./ \
-	&& cd .. \
-	&& tar -cvzf ../pdftools.tar.gz *
+	&& cp -r ../../poppler-data/COPYING.gpl2 ./
