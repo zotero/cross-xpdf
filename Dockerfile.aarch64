@@ -1,0 +1,54 @@
+FROM debian:stretch
+
+LABEL maintainer="Martynas Bagdonas <git.martynas@gmail.com>"
+
+RUN apt-get update \
+	&& apt-get -y install \
+		git \
+		wget \
+		build-essential \
+		llvm \
+		llvm-dev \
+		gcc-aarch64-linux-gnu \
+		g++-aarch64-linux-gnu \
+		cmake \
+		automake \
+		autogen \
+		pkg-config \
+		sed \
+		clang \
+		libxml2-dev \
+		patch
+
+RUN mkdir /build \
+	&& mkdir /build/linux_aarch64
+
+COPY linux_aarch64.cmake /build/linux_aarch64.cmake
+
+RUN cd /build/ \
+	&& wget -O xpdf.tar.gz https://dl.xpdfreader.com/xpdf-4.03.tar.gz \
+	&& mkdir xpdf \
+	&& tar -xf xpdf.tar.gz -C xpdf --strip-components=1 \
+	&& cd xpdf \
+	&& sed -i "/^\s\sfixCommandLine(&argc,/a if(argc!=3 || argv[1][0]=='-' || argv[2][0]=='-') {fprintf(stderr,\"This is a custom xpdf pdfinfo build. Please use the original version!\\\\n%s\\\\n%s\\\\npdfinfo <PDF-file> <output-file>\\\\n\",xpdfVersion,xpdfCopyright); return 1;} else {freopen( argv[argc-1], \"w\", stdout); argc--;}" xpdf/pdfinfo.cc
+
+COPY pdftotext.cc /build/xpdf/xpdf/pdftotext.cc
+COPY GlobalParams.h /build/xpdf/xpdf/GlobalParams.h
+COPY GlobalParams.cc /build/xpdf/xpdf/GlobalParams.cc
+COPY gfile.h /build/xpdf/goo/gfile.h
+COPY gfile.cc /build/xpdf/goo/gfile.cc
+COPY cmake-config.txt /build/xpdf/cmake-config.txt
+
+# Linux AArch64
+RUN cd /build/linux_aarch64 \
+	&& cmake /build/xpdf \
+			-DCMAKE_CXX_FLAGS="-Os" \
+			-DCMAKE_EXE_LINKER_FLAGS="-static -pthread" \
+			-DCMAKE_TOOLCHAIN_FILE=../linux_aarch64.cmake \
+			${COMMON_OPTIONS} \
+	&& make
+
+RUN mkdir /build/pdftools \
+	&& cd /build/pdftools \
+	&& cp /build/linux_aarch64/xpdf/pdfinfo ./pdfinfo-linux-aarch64 \
+	&& cp /build/linux_aarch64/xpdf/pdftotext ./pdftotext-linux-aarch64
